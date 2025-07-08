@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -34,6 +33,9 @@
       background: white;
       padding: 15px;
       border-radius: 10px;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .registro {
       margin-bottom: 10px;
@@ -57,16 +59,43 @@
   </div>
 
   <script>
+    // Recupera e exibe o histórico salvo no localStorage
+    function carregarHistorico() {
+      const dados = localStorage.getItem('historicoBebeEmDia');
+      if (dados) {
+        const registros = JSON.parse(dados);
+        registros.forEach(reg => adicionarRegistroNaTela(reg));
+      }
+    }
+
+    // Adiciona um registro ao histórico na tela
+    function adicionarRegistroNaTela(registro) {
+      const div = document.createElement('div');
+      div.className = 'registro';
+      div.innerHTML = `<strong>${registro.tipo}</strong> registrado às <em>${registro.hora}</em><br/>${registro.obs ? '📝 ' + registro.obs : ''}`;
+      const container = document.getElementById('registros');
+      container.prepend(div);
+    }
+
+    // Salva novo registro no localStorage e atualiza a tela
     function registrar(tipo) {
       const hora = new Date().toLocaleString('pt-BR');
       const obs = prompt(`Observações para ${tipo}? (opcional)`);
 
-      const div = document.createElement('div');
-      div.className = 'registro';
-      div.innerHTML = `<strong>${tipo}</strong> registrado às <em>${hora}</em><br/>${obs ? '📝 ' + obs : ''}`;
+      const registro = { tipo, hora, obs };
 
-      document.getElementById('registros').prepend(div);
+      // Salva no localStorage
+      const dados = localStorage.getItem('historicoBebeEmDia');
+      const registros = dados ? JSON.parse(dados) : [];
+      registros.push(registro);
+      localStorage.setItem('historicoBebeEmDia', JSON.stringify(registros));
+
+      // Atualiza na tela
+      adicionarRegistroNaTela(registro);
     }
+
+    // Carrega o histórico quando a página abre
+    window.onload = carregarHistorico;
   </script>
 
 </body>
