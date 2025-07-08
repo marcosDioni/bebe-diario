@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bebê em Dia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f2f2f2;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+      text-align: center;
+    }
+    button {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    #historico {
+      margin-top: 30px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .registro {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Bebê em Dia</h1>
+
+  <button onclick="registrar('Mamada')">Registrar Mamada</button>
+  <button onclick="registrar('Soneca')">Registrar Soneca</button>
+  <button onclick="registrar('Golfada / Vômito')">Registrar Golfada / Vômito</button>
+  <button onclick="registrar('Medicação')">Registrar Medicação</button>
+
+  <div id="historico">
+    <h2>Histórico</h2>
+    <div id="registros"></div>
+  </div>
+
+  <script>
+    function registrar(tipo) {
+      const hora = new Date().toLocaleString('pt-BR');
+      const obs = prompt(`Observações para ${tipo}? (opcional)`);
+
+      const div = document.createElement('div');
+      div.className = 'registro';
+      div.innerHTML = `<strong>${tipo}</strong> registrado às <em>${hora}</em><br/>${obs ? '📝 ' + obs : ''}`;
+
+      document.getElementById('registros').prepend(div);
+    }
+  </script>
+
+</body>
+</html>
