@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bebê em Dia</title>
+
+  <!-- Evitar cache agressivo -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,44 +65,57 @@
   </div>
 
   <script>
-    // Recupera e exibe o histórico salvo no localStorage
     function carregarHistorico() {
       const dados = localStorage.getItem('historicoBebeEmDia');
+      const container = document.getElementById('registros');
+      container.innerHTML = ''; // limpa a lista
+
       if (dados) {
         const registros = JSON.parse(dados);
-        registros.forEach(reg => adicionarRegistroNaTela(reg));
+        registros.slice().reverse().forEach(reg => {
+          const div = document.createElement('div');
+          div.className = 'registro';
+          div.innerHTML = `<strong>${reg.tipo}</strong> registrado às <em>${reg.hora}</em><br/>${reg.obs ? '📝 ' + reg.obs : ''}`;
+          container.appendChild(div);
+        });
       }
     }
 
-    // Adiciona um registro ao histórico na tela
-    function adicionarRegistroNaTela(registro) {
-      const div = document.createElement('div');
-      div.className = 'registro';
-      div.innerHTML = `<strong>${registro.tipo}</strong> registrado às <em>${registro.hora}</em><br/>${registro.obs ? '📝 ' + registro.obs : ''}`;
-      const container = document.getElementById('registros');
-      container.prepend(div);
-    }
-
-    // Salva novo registro no localStorage e atualiza a tela
     function registrar(tipo) {
       const hora = new Date().toLocaleString('pt-BR');
       const obs = prompt(`Observações para ${tipo}? (opcional)`);
-
       const registro = { tipo, hora, obs };
 
-      // Salva no localStorage
       const dados = localStorage.getItem('historicoBebeEmDia');
       const registros = dados ? JSON.parse(dados) : [];
       registros.push(registro);
       localStorage.setItem('historicoBebeEmDia', JSON.stringify(registros));
 
-      // Atualiza na tela
-      adicionarRegistroNaTela(registro);
+      carregarHistorico();
     }
 
-    // Carrega o histórico quando a página abre
     window.onload = carregarHistorico;
+  </script>
+
+  <script>
+    // Registro e controle do service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').then(reg => {
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              const atualizar = confirm('🚀 Nova versão disponível! Deseja atualizar agora?');
+              if (atualizar) {
+                window.location.reload();
+              }
+            }
+          };
+        };
+      }).catch(err => console.error('Erro ao registrar Service Worker:', err));
+    }
   </script>
 
 </body>
 </html>
+
