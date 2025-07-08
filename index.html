@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bebê em Dia</title>
 
-  <!-- Evitar cache agressivo -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -34,14 +33,28 @@
       color: white;
       cursor: pointer;
     }
+    .data-lista {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .data-item {
+      cursor: pointer;
+      display: inline-block;
+      margin: 5px;
+      padding: 8px 12px;
+      background: #e0e0e0;
+      border-radius: 8px;
+    }
+    .data-item.selecionada {
+      background: #4CAF50;
+      color: white;
+    }
     #historico {
-      margin-top: 30px;
       background: white;
       padding: 15px;
       border-radius: 10px;
       max-width: 320px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: auto;
     }
     .registro {
       margin-bottom: 10px;
@@ -54,51 +67,95 @@
 
   <h1>Bebê em Dia</h1>
 
+  <div class="data-lista" id="lista-datas"></div>
+
   <button onclick="registrar('Mamada')">Registrar Mamada</button>
   <button onclick="registrar('Soneca')">Registrar Soneca</button>
   <button onclick="registrar('Golfada / Vômito')">Registrar Golfada / Vômito</button>
   <button onclick="registrar('Medicação')">Registrar Medicação</button>
 
   <div id="historico">
-    <h2>Histórico</h2>
+    <h2>Registros do dia</h2>
     <div id="registros"></div>
   </div>
 
   <script>
-    function carregarHistorico() {
-      const dados = localStorage.getItem('historicoBebeEmDia');
-      const container = document.getElementById('registros');
-      container.innerHTML = ''; // limpa a lista
+    let dataSelecionada = obterDataHoje();
 
-      if (dados) {
-        const registros = JSON.parse(dados);
-        registros.slice().reverse().forEach(reg => {
-          const div = document.createElement('div');
-          div.className = 'registro';
-          div.innerHTML = `<strong>${reg.tipo}</strong> registrado às <em>${reg.hora}</em><br/>${reg.obs ? '📝 ' + reg.obs : ''}`;
-          container.appendChild(div);
-        });
+    function obterDataHoje() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function carregarDatas() {
+      const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
+      const container = document.getElementById('lista-datas');
+      container.innerHTML = '';
+
+      const datas = Object.keys(dados).sort((a, b) => b.localeCompare(a));
+
+      datas.forEach(data => {
+        const span = document.createElement('span');
+        span.className = 'data-item' + (data === dataSelecionada ? ' selecionada' : '');
+        span.textContent = formatarDataLegivel(data);
+        span.onclick = () => {
+          dataSelecionada = data;
+          carregarDatas();
+          carregarHistorico(dataSelecionada);
+        };
+        container.appendChild(span);
+      });
+
+      if (!datas.includes(dataSelecionada)) {
+        dataSelecionada = obterDataHoje();
       }
     }
 
-    function registrar(tipo) {
-      const hora = new Date().toLocaleString('pt-BR');
-      const obs = prompt(`Observações para ${tipo}? (opcional)`);
-      const registro = { tipo, hora, obs };
-
-      const dados = localStorage.getItem('historicoBebeEmDia');
-      const registros = dados ? JSON.parse(dados) : [];
-      registros.push(registro);
-      localStorage.setItem('historicoBebeEmDia', JSON.stringify(registros));
-
-      carregarHistorico();
+    function formatarDataLegivel(dataStr) {
+      const [ano, mes, dia] = dataStr.split('-');
+      return `${dia}/${mes}/${ano}`;
     }
 
-    window.onload = carregarHistorico;
+    function carregarHistorico(data) {
+      const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
+      const registros = dados[data] || [];
+
+      const container = document.getElementById('registros');
+      container.innerHTML = '';
+
+      registros.slice().reverse().forEach(reg => {
+        const div = document.createElement('div');
+        div.className = 'registro';
+        div.innerHTML = `<strong>${reg.tipo}</strong> às <em>${reg.hora}</em><br/>${reg.obs ? '📝 ' + reg.obs : ''}`;
+        container.appendChild(div);
+      });
+    }
+
+    function registrar(tipo) {
+      const hora = new Date().toLocaleTimeString('pt-BR');
+      const obs = prompt(`Observações para ${tipo}? (opcional)`);
+      const novoRegistro = { tipo, hora, obs };
+
+      const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
+
+      if (!dados[dataSelecionada]) {
+        dados[dataSelecionada] = [];
+      }
+
+      dados[dataSelecionada].push(novoRegistro);
+      localStorage.setItem('historicoPorData', JSON.stringify(dados));
+
+      carregarHistorico(dataSelecionada);
+      carregarDatas();
+    }
+
+    window.onload = () => {
+      carregarDatas();
+      carregarHistorico(dataSelecionada);
+    };
   </script>
 
   <script>
-    // Registro e controle do service worker
+    // Service Worker (atualização automática)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').then(reg => {
         reg.onupdatefound = () => {
@@ -112,10 +169,9 @@
             }
           };
         };
-      }).catch(err => console.error('Erro ao registrar Service Worker:', err));
+      }).catch(err => console.error('Erro ao registrar SW:', err));
     }
   </script>
 
 </body>
 </html>
-
