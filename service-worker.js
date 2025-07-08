@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bebeemdia-cache-v1'; // Aumente esse número quando mudar algo
+const CACHE_NAME = 'bebeemdia-cache-v2';
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
-  // outros arquivos estáticos, como CSS ou imagens, se houver
+  '/service-worker.js'
 ];
 
 self.addEventListener('install', event => {
