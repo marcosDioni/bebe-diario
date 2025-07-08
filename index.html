@@ -33,21 +33,15 @@
       color: white;
       cursor: pointer;
     }
-    .data-lista {
+    #dataSelecionadaContainer {
       text-align: center;
-      margin-bottom: 20px;
+      margin: 20px auto;
     }
-    .data-item {
-      cursor: pointer;
-      display: inline-block;
-      margin: 5px;
-      padding: 8px 12px;
-      background: #e0e0e0;
+    input[type="date"] {
+      font-size: 16px;
+      padding: 8px;
       border-radius: 8px;
-    }
-    .data-item.selecionada {
-      background: #4CAF50;
-      color: white;
+      border: 1px solid #ccc;
     }
     #historico {
       background: white;
@@ -67,7 +61,10 @@
 
   <h1>Bebê em Dia</h1>
 
-  <div class="data-lista" id="lista-datas"></div>
+  <div id="dataSelecionadaContainer">
+    <label for="dataSelecionada">Selecione uma data:</label><br />
+    <input type="date" id="dataSelecionada" />
+  </div>
 
   <button onclick="registrar('Mamada')">Registrar Mamada</button>
   <button onclick="registrar('Soneca')">Registrar Soneca</button>
@@ -80,47 +77,22 @@
   </div>
 
   <script>
-    let dataSelecionada = obterDataHoje();
+    const inputData = document.getElementById('dataSelecionada');
 
     function obterDataHoje() {
       return new Date().toISOString().split('T')[0];
     }
 
-    function carregarDatas() {
-      const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
-      const container = document.getElementById('lista-datas');
-      container.innerHTML = '';
-
-      const datas = Object.keys(dados).sort((a, b) => b.localeCompare(a));
-
-      datas.forEach(data => {
-        const span = document.createElement('span');
-        span.className = 'data-item' + (data === dataSelecionada ? ' selecionada' : '');
-        span.textContent = formatarDataLegivel(data);
-        span.onclick = () => {
-          dataSelecionada = data;
-          carregarDatas();
-          carregarHistorico(dataSelecionada);
-        };
-        container.appendChild(span);
-      });
-
-      if (!datas.includes(dataSelecionada)) {
-        dataSelecionada = obterDataHoje();
-      }
-    }
-
-    function formatarDataLegivel(dataStr) {
-      const [ano, mes, dia] = dataStr.split('-');
-      return `${dia}/${mes}/${ano}`;
-    }
-
     function carregarHistorico(data) {
       const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
       const registros = dados[data] || [];
-
       const container = document.getElementById('registros');
       container.innerHTML = '';
+
+      if (registros.length === 0) {
+        container.innerHTML = '<p>Nenhum registro para esta data.</p>';
+        return;
+      }
 
       registros.slice().reverse().forEach(reg => {
         const div = document.createElement('div');
@@ -131,31 +103,42 @@
     }
 
     function registrar(tipo) {
+      const data = inputData.value;
+      if (!data) {
+        alert('Por favor, selecione uma data.');
+        return;
+      }
+
       const hora = new Date().toLocaleTimeString('pt-BR');
       const obs = prompt(`Observações para ${tipo}? (opcional)`);
       const novoRegistro = { tipo, hora, obs };
 
       const dados = JSON.parse(localStorage.getItem('historicoPorData') || '{}');
 
-      if (!dados[dataSelecionada]) {
-        dados[dataSelecionada] = [];
+      if (!dados[data]) {
+        dados[data] = [];
       }
 
-      dados[dataSelecionada].push(novoRegistro);
+      dados[data].push(novoRegistro);
       localStorage.setItem('historicoPorData', JSON.stringify(dados));
 
-      carregarHistorico(dataSelecionada);
-      carregarDatas();
+      carregarHistorico(data);
     }
 
+    inputData.addEventListener('change', () => {
+      const data = inputData.value;
+      if (data) {
+        carregarHistorico(data);
+      }
+    });
+
     window.onload = () => {
-      carregarDatas();
-      carregarHistorico(dataSelecionada);
+      inputData.value = obterDataHoje();
+      carregarHistorico(inputData.value);
     };
   </script>
 
   <script>
-    // Service Worker (atualização automática)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').then(reg => {
         reg.onupdatefound = () => {
